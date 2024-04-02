@@ -1,0 +1,90 @@
+import datetime
+from airflow import DAG
+from airflow.providers.google.cloud.operators.bigquery import (
+    BigQueryCheckOperator, 
+    BigQueryCreateEmptyTableOperator,
+    BigQueryInsertJobOperator
+)
+from airflow.operators.dummy import DummyOperator
+
+PROJECT_ID = 'profound-surge-418508'  # Replace with your project ID
+DATASET = 'composer_test'  # Replace with your dataset name
+EXTERNAL_TABLE = 'composerexternaltable'  # Replace with your external table name
+NATIVE_TABLE = 'composernativetable'  # Replace with your native table name
+
+default_args = {
+    'owner': 'airflow',
+    'depends_on_past': False,
+    'email_on_failure': False,
+    'email_on_retry': False,
+    'retries': 1,
+    'retry_delay': datetime.timedelta(minutes=5),
+    'start_date': datetime.datetime(2024, 4, 1) 
+}
+
+with DAG(
+    'external_to_native_load',
+    default_args=default_args,
+    schedule_interval='0 0 * * *',  # Daily schedule
+) as dag:
+
+    check_table_exists = BigQueryCheckOperator(
+        task_id='check_table_exists',
+        sql=f"SELECT * FROM `{PROJECT_ID}.{DATASET}.INFORMATION_SCHEMA.TABLES` WHERE table_name = '{NATIVE_TABLE}'"
+    )
+
+    create_native_table = BigQueryCreateEmptyTableOperator(
+        task_id='create_native_table',
+        dataset_id=DATASET,
+        table_id=NATIVE_TABLE,
+        schema_fields=[ 
+            {'name': 'first_name', 'type': 'STRING', 'mode': 'NULLABLE'},
+            {'name': 'last_name', 'type': 'STRING', 'mode': 'NULLABLE'},
+            {'name': 'age', 'type': 'INTEGER', 'mode': 'NULLABLE'},
+            {'name': 'email', 'type': 'STRING', 'mode': 'NULLABLE'},
+            {'name': 'phone_number', 'type': 'STRING', 'mode': 'NULLABLE'},
+            {'name': 'address', 'type': 'STRING', 'mode': 'NULLABLE'},
+            {'name': 'city', 'type': 'STRING', 'mode': 'NULLABLE'},
+            {'name': 'state', 'type': 'STRING', 'mode': 'NULLABLE'},
+            {'name': 'country', 'type': 'STRING', 'mode': 'NULLABLE'},
+            {'name': 'postal_code', 'type': 'STRING', 'mode': 'NULLABLE'}
+        ]
+    )
+
+    load_native_table = BigQueryInsertJobOperator(
+       task_id='load_native_table',
+       configuration={
+           "query": {
+               "query": f"""
+                   MERGE `{PROJECT_ID}.{DATASET}.{NATIVE_TABLE}` T 
+                   USING `{PROJECT_ID}.{DATASET}.{EXTERNAL_TABLE}` S
+                   ON T.phone_number = S.phone_number 
+                   WHEN MATCHED THEN 
+                       UPDATE SET 
+                           first_name = S.first_name,
+                           last_name = S.last_name,
+                           age = S.age,
+                           email = S.email,
+                           address = S.address,
+                           city = S.city,
+                           state = S.state,
+                           country = S.country, 
+                           postal_code = S.postal_code   
+                   WHEN NOT MATCHED THEN
+                       INSERT ROW
+               """,
+               "useLegacySql": False,
+               "destinationTable": {
+                   'projectId': PROJECT_ID,
+                   'datasetId': DATASET,
+                   'tableId': NATIVE_TABLE
+               },
+               "writeDisposition": "WRITE_APPEND"        
+           }
+       }
+   )
+
+    start_task = DummyOperator(task_id='start_task')
+    end_task = DummyOperator(task_id='end_task')
+
+    start_task >> check_table_exists >> create_native_table >> load_native_table >> end_task 

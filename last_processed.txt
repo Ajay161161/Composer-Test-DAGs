@@ -1,0 +1,44 @@
+import base64
+from google.cloud import dlp_v2
+from google.cloud import storage
+
+PROJECT_ID = 'dlp-test-project'
+DLP_TEMPLATE = 'projects/dlp-test-project-417712/locations/global/deidentifyTemplates/MASK-DLP-TEST'
+INPUT_BUCKET = 'dlp-demo-bucket-test'
+INPUT_FOLDER = 'demo-dls-folder/'
+
+def process_file(event, context):
+    """Triggered by a change to a Cloud Storage bucket.
+    Args:
+         event (dict): Event payload.
+         context (google.cloud.functions.Context): Metadata for the event.
+    """
+    file = event
+    bucket_name = file['bucket']
+    file_name = file['name']
+
+    if not file_name.startswith(INPUT_FOLDER):
+        print(f"File {file_name} is not in the input folder. Skipping.")
+        return
+
+    # Download the file from Cloud Storage
+    storage_client = storage.Client()
+    bucket = storage_client.bucket(bucket_name)
+    blob = bucket.blob(file_name)
+    contents = blob.download_as_string()
+
+    # Apply DLP De-identification
+    dlp_client = dlp_v2.DlpServiceClient()
+    deidentify_config = {
+        "deidentify_template_name": DLP_TEMPLATE
+    }
+    item = {"value": contents.decode('utf-8')}  # Assuming text file
+    response = dlp_client.deidentify_content(
+        parent=f"projects/{PROJECT_ID}", deidentify_config=deidentify_config, item=item)
+    masked_content = response.item.value
+
+    # Upload the masked file back to Cloud Storage
+    masked_file_name = 'masked_file_' + file_name
+    masked_blob = bucket.blob(masked_file_name)
+    masked_blob.upload_from_string(masked_content)
+    print(f'Masked file saved as {masked_file_name}')

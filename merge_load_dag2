@@ -1,0 +1,73 @@
+import datetime
+from airflow import DAG
+from airflow.providers.google.cloud.operators.bigquery import BigQueryCheckOperator, BigQueryOperator
+from airflow.operators.dummy import DummyOperator
+
+
+PROJECT_ID = 'profound-surge-418508'  
+DATASET = 'composer_test'  
+EXTERNAL_TABLE = 'composerexternaltable' 
+NATIVE_TABLE = 'composernativetable'
+
+default_args = {
+    'owner': 'airflow',
+    'depends_on_past': False,
+    'email_on_failure': False,  
+    'email_on_retry': False,  
+    'retries': 1, 
+    'retry_delay': datetime.timedelta(minutes=5),
+    'start_date': datetime.datetime(2024, 4, 1) 
+}
+
+with DAG(
+    'external_to_native_load',
+    default_args=default_args,
+    schedule_interval='0 0 * * *'  # Daily schedule 
+) as dag:
+
+    check_table_exists = BigQueryCheckOperator(
+        task_id='check_table_exists',
+        sql=f"SELECT COUNT(1) FROM `{PROJECT_ID}.{DATASET}.{NATIVE_TABLE}`",  
+        use_legacy_sql=False,
+        bigquery_conn_id='google_cloud_default' 
+    )
+
+    create_native_table = BigQueryOperator(
+        task_id='create_native_table',
+        sql=f"""
+            CREATE OR REPLACE TABLE `{PROJECT_ID}.{DATASET}.{NATIVE_TABLE}` 
+            AS SELECT * FROM `{PROJECT_ID}.{DATASET}.{EXTERNAL_TABLE}`
+        """,
+        use_legacy_sql=False,
+        bigquery_conn_id='google_cloud_default'
+    )
+
+    load_native_table = BigQueryOperator(
+        task_id='load_native_table',
+        sql=f"""
+            MERGE `{PROJECT_ID}.{DATASET}.{NATIVE_TABLE}` T 
+            USING `{PROJECT_ID}.{DATASET}.{EXTERNAL_TABLE}` S
+            ON T.phone_number = S.phone_number  # Assuming 'phone_number' is your matching column
+            WHEN MATCHED THEN 
+                UPDATE SET 
+                    first_name = S.first_name,
+                    last_name = S.last_name,
+                    age = S.age,
+                    email = S.email,
+                    address = S.address,
+                    city = S.city,
+                    state = S.state,
+                    country = S.country, 
+                    postal_code = S.postal_code  
+            WHEN NOT MATCHED THEN
+                INSERT ROW
+        """,
+        use_legacy_sql=False,
+        write_disposition="WRITE_APPEND",
+        bigquery_conn_id='google_cloud_default'
+    )
+
+    start_task = DummyOperator(task_id='start_task')
+    end_task = DummyOperator(task_id='end_task')
+
+    start_task >> check_table_exists >> create_native_table >> load_native_table >> end_task

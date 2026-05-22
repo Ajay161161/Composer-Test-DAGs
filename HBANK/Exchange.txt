@@ -1,9 +1,23 @@
 import base64
+import binascii
+
 from google.cloud import storage
 
-def decode_b64_to_csv(bucket_name, file_path):
+
+def decode_b64_to_csv(
+        bucket_name,
+        file_path,
+        decoded_output_path):
+
+    # Decode Base64 CSV files and return updated file path
 
     try:
+
+        if not file_path.lower().endswith(".csv"):
+
+            print(f"Skipping non-csv file: {file_path}")
+
+            return file_path
 
         client = storage.Client()
 
@@ -15,19 +29,50 @@ def decode_b64_to_csv(bucket_name, file_path):
 
         encoded_data = blob.download_as_text()
 
-        decoded_data = base64.b64decode(encoded_data)
+        try:
 
-        blob.upload_from_string(
-            decoded_data,
-            content_type='text/csv'
+            decoded_data = base64.b64decode(
+                encoded_data,
+                validate=True
+            )
+
+        except binascii.Error:
+
+            print(
+                f"File is not valid Base64: "
+                f"{file_path}"
+            )
+
+            return file_path
+
+        file_name = file_path.split("/")[-1]
+
+        decoded_file_path = (
+            f"{decoded_output_path.rstrip('/')}/"
+            f"{file_name}"
         )
 
-        print(f"Successfully decoded file: {file_path}")
+        decoded_blob = bucket.blob(
+            decoded_file_path
+        )
 
-        return True
+        decoded_blob.upload_from_string(
+            decoded_data,
+            content_type="text/csv"
+        )
+
+        print(
+            f"Successfully decoded file to: "
+            f"{decoded_file_path}"
+        )
+
+        return decoded_file_path
 
     except Exception as e:
 
-        print(f"Failed decoding file {file_path}: {str(e)}")
+        print(
+            f"Failed decoding file "
+            f"{file_path}: {str(e)}"
+        )
 
         raise

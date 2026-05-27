@@ -1,65 +1,180 @@
-import base64
-import binascii
+DECLARE TBL_NAME STRING DEFAULT 'CLAIMS_HISTORY';
+DECLARE DATASETNAME STRING DEFAULT '${TARGET_DATASET}';
+DECLARE DATEFORMAT STRING DEFAULT '%d-%b-%Y';
 
-from google.cloud import storage
+INSERT INTO ${STAGING_DATASET}.CLAIMS_HISTORY
+SELECT *
+FROM ${STAGING_DATASET}.CLAIMS_HISTORY_UNTAGGED;
 
+DELETE FROM ${STAGING_DATASET}.CLAIMS_HISTORY_UNTAGGED
+WHERE TRUE;
 
-def decode_b64_to_csv(
-        bucket_name,
-        file_path,
-        decoded_output_path):
+INSERT INTO ${TARGET_DATASET}.CLAIMS_HISTORY
+(
+    BRAND,
+    DATE_CASE_RECEIVED,
+    DAY_CASE_RECEIVED,
+    CIN,
+    CARD_NUMBER,
+    PRODUCT_NAME,
+    RETAILER,
+    TOTAL_TRANSACTION_VALUE,
+    TRANSACTION_VALUE_ON_CARD,
+    UK_CARD,
+    UK_NON_CARD,
+    FOREIGN_CARD,
+    FOREIGN_NON_CARD,
+    AMOUNT_CHARGEDBACK_ALREADY,
+    DATE_CASE_COMPLETE,
+    DAY_CASE_COMPLETED,
+    AMOUNT_SAVED_CCA_NEGOTIATIONS,
+    AMOUNT_SAVED_CBKS,
+    AMOUNT_SAVED_PRE_NEG,
+    AMOUNT_SAVED_RES_WITH_RETAILER,
+    AMOUNT_SAVED_A_COURT,
+    BUSINESS_ERROR_OVER_1K,
+    BUSINESS_AREA_AT_FAULT,
+    TOTAL_WRITTEN_OFF,
+    WRITE_OFF_CATEGORY,
+    FOS_CASE,
+    COURT_CASE,
+    NOTES,
+    FOREIGN_TRANSACTION,
+    MERCHANT_TRADING,
+    DATE_OF_OFFER,
+    TOTAL_OFFERED_AMOUNT,
+    REASON_FOR_CLAIM,
+    CONSEQUENTIAL_LOSS,
+    SOURCE_OF_CLAIM,
+    CUST_NAME,
+    AMNT_REC_CHGB,
+    AMNT_PAID_CD,
+    CONSEQ_LOSS,
+    CASE_CREATED_BY,
+    CASE_CLOSED_BY,
+    CLOSE_REF,
+    STATUS,
+    FILE_DATE,
+    PRM_LNE_OF_BUS_CDE_FILTER,
+    ENTITY_CDE_FILTER,
+    CTRY_CDE_FILTER,
+    LAST_INGESTION_TIMESTAMP
+)
 
-    # Decode Base64 CSV files and return updated file path
+SELECT
 
-    try:
+    LTRIM(RTRIM(BRAND)),
 
-        if not file_path.lower().endswith(".csv"):
+    PARSE_DATE(DATEFORMAT, LTRIM(RTRIM(DATE_CASE_RECEIVED))),
 
-            print(f"Skipping non-csv file: {file_path}")
+    LTRIM(RTRIM(DAY_CASE_RECEIVED)),
 
-            return file_path
+    LTRIM(RTRIM(CIN)),
 
-        client = storage.Client()
+    LTRIM(RTRIM(CARD_NUMBER)),
 
-        bucket = client.bucket(bucket_name)
+    LTRIM(RTRIM(PRODUCT_NAME)),
 
-        blob = bucket.blob(file_path)
+    LTRIM(RTRIM(RETAILER)),
 
-        print(f"Reading file: {file_path}")
+    CAST(REGEXP_REPLACE(TOTAL_TRANSACTION_VALUE, r',', '') AS NUMERIC),
 
-        encoded_data = blob.download_as_text()
+    CAST(REGEXP_REPLACE(TRANSACTION_VALUE_ON_CARD, r',', '') AS NUMERIC),
 
-        try:
+    CAST(REGEXP_REPLACE(UK_CARD, r',', '') AS NUMERIC),
 
-            decoded_data = base64.b64decode(
-                encoded_data,
-                validate=True
-            )
+    CAST(REGEXP_REPLACE(UK_NON_CARD, r',', '') AS NUMERIC),
 
-        except binascii.Error:
+    CAST(REGEXP_REPLACE(FOREIGN_CARD, r',', '') AS NUMERIC),
 
-            print(
-                f"File is not valid Base64: "
-                f"{file_path}"
-            )
+    CAST(REGEXP_REPLACE(FOREIGN_NON_CARD, r',', '') AS NUMERIC),
 
-            return file_path
+    CAST(REGEXP_REPLACE(AMOUNT_CHARGEDBACK_ALREADY, r',', '') AS NUMERIC),
 
-        file_name = file_path.split("/")[-1]
+    PARSE_DATE(DATEFORMAT, LTRIM(RTRIM(DATE_CASE_COMPLETE))),
 
-        decoded_file_path = (
-            f"{decoded_output_path.rstrip('/')}/"
-            f"{file_name}"
-        )
+    LTRIM(RTRIM(DAY_CASE_COMPLETED)),
 
-        decoded_blob = bucket.blob(
-            decoded_file_path
-        )
+    CAST(REGEXP_REPLACE(AMOUNT_SAVED_CCA_NEGOTIATIONS, r',', '') AS NUMERIC),
 
-        decoded_blob.upload_from_string(
-            decoded_data,
-            content_type="text/csv"
-        )
+    CAST(REGEXP_REPLACE(AMOUNT_SAVED_CBKS, r',', '') AS NUMERIC),
+
+    CAST(REGEXP_REPLACE(AMOUNT_SAVED_PRE_NEG, r',', '') AS NUMERIC),
+
+    CAST(REGEXP_REPLACE(AMOUNT_SAVED_RES_WITH_RETAILER, r',', '') AS NUMERIC),
+
+    CAST(REGEXP_REPLACE(AMOUNT_SAVED_A_COURT, r',', '') AS NUMERIC),
+
+    LTRIM(RTRIM(BUSINESS_ERROR_OVER_1K)),
+
+    LTRIM(RTRIM(BUSINESS_AREA_AT_FAULT)),
+
+    CAST(REGEXP_REPLACE(TOTAL_WRITTEN_OFF, r',', '') AS NUMERIC),
+
+    LTRIM(RTRIM(WRITE_OFF_CATEGORY)),
+
+    LTRIM(RTRIM(FOS_CASE)),
+
+    LTRIM(RTRIM(COURT_CASE)),
+
+    LTRIM(RTRIM(NOTES)),
+
+    LTRIM(RTRIM(FOREIGN_TRANSACTION)),
+
+    LTRIM(RTRIM(MERCHANT_TRADING)),
+
+    PARSE_DATE(DATEFORMAT, LTRIM(RTRIM(DATE_OF_OFFER))),
+
+    CAST(REGEXP_REPLACE(TOTAL_OFFERED_AMOUNT, r',', '') AS NUMERIC),
+
+    LTRIM(RTRIM(REASON_FOR_CLAIM)),
+
+    CAST(REGEXP_REPLACE(CONSEQUENTIAL_LOSS, r',', '') AS NUMERIC),
+
+    LTRIM(RTRIM(SOURCE_OF_CLAIM)),
+
+    LTRIM(RTRIM(CUST_NAME)),
+
+    CAST(REGEXP_REPLACE(AMNT_REC_CHGB, r',', '') AS NUMERIC),
+
+    CAST(REGEXP_REPLACE(AMNT_PAID_CD, r',', '') AS NUMERIC),
+
+    CAST(REGEXP_REPLACE(CONSEQ_LOSS, r',', '') AS NUMERIC),
+
+    LTRIM(RTRIM(CASE_CREATED_BY)),
+
+    LTRIM(RTRIM(CASE_CLOSED_BY)),
+
+    LTRIM(RTRIM(CLOSE_REF)),
+
+    LTRIM(RTRIM(STATUS)),
+
+    PARSE_DATE(DATEFORMAT, LTRIM(RTRIM(FILE_DATE))),
+
+    PRM_LNE_OF_BUS_CDE_FILTER,
+
+    ENTITY_CDE_FILTER,
+
+    CTRY_CDE_FILTER,
+
+    LAST_INGESTION_TIMESTAMP
+
+FROM ${STAGING_DATASET}.CLAIMS_HISTORY
+
+WHERE PRM_LNE_OF_BUS_CDE_FILTER IS NOT NULL
+AND TRIM(PRM_LNE_OF_BUS_CDE_FILTER) <> 'NA'
+AND TRIM(CTRY_CDE_FILTER) <> 'FR';
+
+INSERT INTO ${STAGING_DATASET}.CLAIMS_HISTORY_UNTAGGED
+
+SELECT *
+FROM ${STAGING_DATASET}.CLAIMS_HISTORY
+
+WHERE PRM_LNE_OF_BUS_CDE_FILTER IS NULL;
+
+DELETE FROM ${STAGING_DATASET}.CLAIMS_HISTORY
+
+WHERE PRM_LNE_OF_BUS_CDE_FILTER IS NOT NULL;        )
 
         print(
             f"Successfully decoded file to: "

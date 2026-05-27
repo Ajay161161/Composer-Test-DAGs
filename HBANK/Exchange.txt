@@ -1,193 +1,207 @@
-DECLARE TBL_NAME STRING DEFAULT 'CLAIMS_HISTORY';
-DECLARE DATASETNAME STRING DEFAULT '${TARGET_DATASET}';
-DECLARE DATEFORMAT STRING DEFAULT '%d-%b-%Y';
-
-INSERT INTO ${STAGING_DATASET}.CLAIMS_HISTORY
-SELECT *
-FROM ${STAGING_DATASET}.CLAIMS_HISTORY_UNTAGGED;
-
-DELETE FROM ${STAGING_DATASET}.CLAIMS_HISTORY_UNTAGGED
-WHERE TRUE;
-
-INSERT INTO ${TARGET_DATASET}.CLAIMS_HISTORY
+CREATE TABLE `${STAGING_DATASET}.CLAIMS_HISTORY`
 (
-    BRAND,
-    DATE_CASE_RECEIVED,
-    DAY_CASE_RECEIVED,
-    CIN,
-    CARD_NUMBER,
-    PRODUCT_NAME,
-    RETAILER,
-    TOTAL_TRANSACTION_VALUE,
-    TRANSACTION_VALUE_ON_CARD,
-    UK_CARD,
-    UK_NON_CARD,
-    FOREIGN_CARD,
-    FOREIGN_NON_CARD,
-    AMOUNT_CHARGEDBACK_ALREADY,
-    DATE_CASE_COMPLETE,
-    DAY_CASE_COMPLETED,
-    AMOUNT_SAVED_CCA_NEGOTIATIONS,
-    AMOUNT_SAVED_CBKS,
-    AMOUNT_SAVED_PRE_NEG,
-    AMOUNT_SAVED_RES_WITH_RETAILER,
-    AMOUNT_SAVED_A_COURT,
-    BUSINESS_ERROR_OVER_1K,
-    BUSINESS_AREA_AT_FAULT,
-    TOTAL_WRITTEN_OFF,
-    WRITE_OFF_CATEGORY,
-    FOS_CASE,
-    COURT_CASE,
-    NOTES,
-    FOREIGN_TRANSACTION,
-    MERCHANT_TRADING,
-    DATE_OF_OFFER,
-    TOTAL_OFFERED_AMOUNT,
-    REASON_FOR_CLAIM,
-    CONSEQUENTIAL_LOSS,
-    SOURCE_OF_CLAIM,
-    CUST_NAME,
-    AMNT_REC_CHGB,
-    AMNT_PAID_CD,
-    CONSEQ_LOSS,
-    CASE_CREATED_BY,
-    CASE_CLOSED_BY,
-    CLOSE_REF,
-    STATUS,
-    FILE_DATE,
-    PRM_LNE_OF_BUS_CDE_FILTER,
-    ENTITY_CDE_FILTER,
-    CTRY_CDE_FILTER,
-    LAST_INGESTION_TIMESTAMP
+    BRAND STRING OPTIONS(description="Card/network or business brand associated with the case (e.g., Visa, Mastercard, internal brand)."),
+
+    DATE_CASE_RECEIVED STRING OPTIONS(description="Calendar date the case/claim was received."),
+
+    DAY_CASE_RECEIVED STRING OPTIONS(description="Day of week the case was received (e.g., Monday)."),
+
+    CIN STRING OPTIONS(description="Customer/Case Identifier Number used internally to uniquely identify the customer or case."),
+
+    CARD_NUMBER STRING OPTIONS(description="Masked or tokenized card number linked to the disputed transaction(s)."),
+
+    PRODUCT_NAME STRING OPTIONS(description="Name of the financial product tied to the case (e.g., credit card type)."),
+
+    RETAILER STRING OPTIONS(description="Merchant/retailer involved in the disputed transaction."),
+
+    TOTAL_TRANSACTION_VALUE STRING OPTIONS(description="Total value of all transactions under dispute for the case."),
+
+    TRANSACTION_VALUE_ON_CARD STRING OPTIONS(description="Portion of disputed value paid by card."),
+
+    UK_CARD STRING OPTIONS(description="Amount/count of UK transactions paid by card."),
+
+    UK_NON_CARD STRING OPTIONS(description="Amount/count of UK transactions not paid by card (e.g., bank transfer, cash)."),
+
+    FOREIGN_CARD STRING OPTIONS(description="Amount/count of non-UK transactions paid by card."),
+
+    FOREIGN_NON_CARD STRING OPTIONS(description="Amount/count of non-UK transactions not paid by card."),
+
+    AMOUNT_CHARGEDBACK_ALREADY STRING OPTIONS(description="Amount already recovered or processed through chargeback."),
+
+    DATE_CASE_COMPLETE STRING OPTIONS(description="Date the case was fully completed/closed operationally."),
+
+    DAY_CASE_COMPLETED STRING OPTIONS(description="Day of week the case was completed."),
+
+    AMOUNT_SAVED_CCA_NEGOTIATIONS STRING OPTIONS(description="Amount saved through CCA-related negotiations."),
+
+    AMOUNT_SAVED_CBKS STRING OPTIONS(description="Amount saved through chargebacks."),
+
+    AMOUNT_SAVED_PRE_NEG STRING OPTIONS(description="Amount saved through pre-negotiation actions."),
+
+    AMOUNT_SAVED_RES_WITH_RETAILER STRING OPTIONS(description="Amount saved through direct resolution with retailer."),
+
+    AMOUNT_SAVED_A_COURT STRING OPTIONS(description="Amount saved/awarded through court action."),
+
+    BUSINESS_ERROR_OVER_1K STRING OPTIONS(description="Flag indicating whether business error impact exceeded 1,000 (currency units)."),
+
+    BUSINESS_AREA_AT_FAULT STRING OPTIONS(description="Internal business unit identified as responsible for error/failure."),
+
+    TOTAL_WRITTEN_OFF STRING OPTIONS(description="Total amount written off on the case."),
+
+    WRITE_OFF_CATEGORY STRING OPTIONS(description="Classification/reason code for write-off."),
+
+    FOS_CASE STRING OPTIONS(description="Flag indicating whether escalated to Financial Ombudsman Service."),
+
+    COURT_CASE STRING OPTIONS(description="Flag indicating whether legal/court proceedings were initiated."),
+
+    NOTES STRING OPTIONS(description="Free-text case notes and handling commentary."),
+
+    FOREIGN_TRANSACTION STRING OPTIONS(description="Flag indicating case involves at least one foreign transaction."),
+
+    MERCHANT_TRADING STRING OPTIONS(description="Merchant trading status/context (e.g., active, ceased trading, insolvent)."),
+
+    DATE_OF_OFFER STRING OPTIONS(description="Date a settlement/compensation offer was made."),
+
+    TOTAL_OFFERED_AMOUNT STRING OPTIONS(description="Total amount offered to customer for settlement/redress."),
+
+    REASON_FOR_CLAIM STRING OPTIONS(description="Primary reason the customer raised the claim/dispute."),
+
+    CONSEQUENTIAL_LOSS STRING OPTIONS(description="Claimed consequential loss amount/details tied to the incident."),
+
+    SOURCE_OF_CLAIM STRING OPTIONS(description="Channel/source where claim originated (e.g., branch, phone, online, FOS)."),
+
+    CUST_NAME STRING OPTIONS(description="Customer full name."),
+
+    AMNT_REC_CHGB STRING OPTIONS(description="Amount recovered via chargeback."),
+
+    AMNT_PAID_CD STRING OPTIONS(description="Amount paid under card dispute/chargeback decision (or card dispute payout)."),
+
+    CONSEQ_LOSS STRING OPTIONS(description="Short form of consequential loss field (amount/value)."),
+
+    CASE_CREATED_BY STRING OPTIONS(description="User/agent ID who created the case record."),
+
+    CASE_CLOSED_BY STRING OPTIONS(description="User/agent ID who closed the case."),
+
+    CLOSE_REF STRING OPTIONS(description="Closure reference number/code."),
+
+    STATUS STRING OPTIONS(description="Current lifecycle status of case (e.g., Open, In Progress, Closed)."),
+
+    FILE_DATE STRING OPTIONS(description="Date case file/document was created or formally filed."),
+
+    PRM_LNE_OF_BUS_CDE_FILTER STRING OPTIONS(description="The line of business of the customer - e.g. RBWM, CMB, GPB, GB&M"),
+
+    ENTITY_CDE_FILTER STRING OPTIONS(description="Entity code as defined within ESR based on the value of institution ID"),
+
+    CTRY_CDE_FILTER STRING OPTIONS(description="The country the customer is domiciled in, used for downstream filtering"),
+
+    LAST_INGESTION_TIMESTAMP TIMESTAMP OPTIONS(description="Timestamp when record was last inserted or updated within Big Query itself")
+);
+
+
+
+
+
+
+
+CREATE TABLE `${TARGET_DATASET}.CLAIMS_HISTORY`
+(
+    BRAND STRING OPTIONS(description="Card/network or business brand associated with the case (e.g., Visa, Mastercard, internal brand)."),
+
+    DATE_CASE_RECEIVED DATE OPTIONS(description="Calendar date the case/claim was received."),
+
+    DAY_CASE_RECEIVED STRING OPTIONS(description="Day of week the case was received (e.g., Monday)."),
+
+    CIN STRING OPTIONS(description="Customer/Case Identifier Number used internally to uniquely identify the customer or case."),
+
+    CARD_NUMBER STRING OPTIONS(description="Masked or tokenized card number linked to the disputed transaction(s)."),
+
+    PRODUCT_NAME STRING OPTIONS(description="Name of the financial product tied to the case (e.g., credit card type)."),
+
+    RETAILER STRING OPTIONS(description="Merchant/retailer involved in the disputed transaction."),
+
+    TOTAL_TRANSACTION_VALUE NUMERIC OPTIONS(description="Total value of all transactions under dispute for the case."),
+
+    TRANSACTION_VALUE_ON_CARD NUMERIC OPTIONS(description="Portion of disputed value paid by card."),
+
+    UK_CARD NUMERIC OPTIONS(description="Amount/count of UK transactions paid by card."),
+
+    UK_NON_CARD NUMERIC OPTIONS(description="Amount/count of UK transactions not paid by card (e.g., bank transfer, cash)."),
+
+    FOREIGN_CARD NUMERIC OPTIONS(description="Amount/count of non-UK transactions paid by card."),
+
+    FOREIGN_NON_CARD NUMERIC OPTIONS(description="Amount/count of non-UK transactions not paid by card."),
+
+    AMOUNT_CHARGEDBACK_ALREADY NUMERIC OPTIONS(description="Amount already recovered or processed through chargeback."),
+
+    DATE_CASE_COMPLETE DATE OPTIONS(description="Date the case was fully completed/closed operationally."),
+
+    DAY_CASE_COMPLETED STRING OPTIONS(description="Day of week the case was completed."),
+
+    AMOUNT_SAVED_CCA_NEGOTIATIONS NUMERIC OPTIONS(description="Amount saved through CCA-related negotiations."),
+
+    AMOUNT_SAVED_CBKS NUMERIC OPTIONS(description="Amount saved through chargebacks."),
+
+    AMOUNT_SAVED_PRE_NEG NUMERIC OPTIONS(description="Amount saved through pre-negotiation actions."),
+
+    AMOUNT_SAVED_RES_WITH_RETAILER NUMERIC OPTIONS(description="Amount saved through direct resolution with retailer."),
+
+    AMOUNT_SAVED_A_COURT NUMERIC OPTIONS(description="Amount saved/awarded through court action."),
+
+    BUSINESS_ERROR_OVER_1K STRING OPTIONS(description="Flag indicating whether business error impact exceeded 1,000 (currency units)."),
+
+    BUSINESS_AREA_AT_FAULT STRING OPTIONS(description="Internal business unit identified as responsible for error/failure."),
+
+    TOTAL_WRITTEN_OFF NUMERIC OPTIONS(description="Total amount written off on the case."),
+
+    WRITE_OFF_CATEGORY STRING OPTIONS(description="Classification/reason code for write-off."),
+
+    FOS_CASE STRING OPTIONS(description="Flag indicating whether escalated to Financial Ombudsman Service."),
+
+    COURT_CASE STRING OPTIONS(description="Flag indicating whether legal/court proceedings were initiated."),
+
+    NOTES STRING OPTIONS(description="Free-text case notes and handling commentary."),
+
+    FOREIGN_TRANSACTION STRING OPTIONS(description="Flag indicating case involves at least one foreign transaction."),
+
+    MERCHANT_TRADING STRING OPTIONS(description="Merchant trading status/context (e.g., active, ceased trading, insolvent)."),
+
+    DATE_OF_OFFER DATE OPTIONS(description="Date a settlement/compensation offer was made."),
+
+    TOTAL_OFFERED_AMOUNT NUMERIC OPTIONS(description="Total amount offered to customer for settlement/redress."),
+
+    REASON_FOR_CLAIM STRING OPTIONS(description="Primary reason the customer raised the claim/dispute."),
+
+    CONSEQUENTIAL_LOSS NUMERIC OPTIONS(description="Claimed consequential loss amount/details tied to the incident."),
+
+    SOURCE_OF_CLAIM STRING OPTIONS(description="Channel/source where claim originated (e.g., branch, phone, online, FOS)."),
+
+    CUST_NAME STRING OPTIONS(description="Customer full name."),
+
+    AMNT_REC_CHGB NUMERIC OPTIONS(description="Amount recovered via chargeback."),
+
+    AMNT_PAID_CD NUMERIC OPTIONS(description="Amount paid under card dispute/chargeback decision (or card dispute payout)."),
+
+    CONSEQ_LOSS NUMERIC OPTIONS(description="Short form of consequential loss field (amount/value)."),
+
+    CASE_CREATED_BY STRING OPTIONS(description="User/agent ID who created the case record."),
+
+    CASE_CLOSED_BY STRING OPTIONS(description="User/agent ID who closed the case."),
+
+    CLOSE_REF STRING OPTIONS(description="Closure reference number/code."),
+
+    STATUS STRING OPTIONS(description="Current lifecycle status of case (e.g., Open, In Progress, Closed)."),
+
+    FILE_DATE DATE OPTIONS(description="Date case file/document was created or formally filed."),
+
+    PRM_LNE_OF_BUS_CDE_FILTER STRING OPTIONS(description="The line of business of the customer - e.g. RBWM, CMB, GPB, GB&M"),
+
+    ENTITY_CDE_FILTER STRING OPTIONS(description="Entity code as defined within ESR based on the value of institution ID"),
+
+    CTRY_CDE_FILTER STRING OPTIONS(description="The country the customer is domiciled in, used for downstream filtering"),
+
+    LAST_INGESTION_TIMESTAMP TIMESTAMP OPTIONS(description="Timestamp when record was last inserted or updated within Big Query itself")
 )
 
-SELECT
+PARTITION BY DATE(LAST_INGESTION_TIMESTAMP)
 
-    LTRIM(RTRIM(BRAND)),
-
-    PARSE_DATE(DATEFORMAT, LTRIM(RTRIM(DATE_CASE_RECEIVED))),
-
-    LTRIM(RTRIM(DAY_CASE_RECEIVED)),
-
-    LTRIM(RTRIM(CIN)),
-
-    LTRIM(RTRIM(CARD_NUMBER)),
-
-    LTRIM(RTRIM(PRODUCT_NAME)),
-
-    LTRIM(RTRIM(RETAILER)),
-
-    CAST(REGEXP_REPLACE(TOTAL_TRANSACTION_VALUE, r',', '') AS NUMERIC),
-
-    CAST(REGEXP_REPLACE(TRANSACTION_VALUE_ON_CARD, r',', '') AS NUMERIC),
-
-    CAST(REGEXP_REPLACE(UK_CARD, r',', '') AS NUMERIC),
-
-    CAST(REGEXP_REPLACE(UK_NON_CARD, r',', '') AS NUMERIC),
-
-    CAST(REGEXP_REPLACE(FOREIGN_CARD, r',', '') AS NUMERIC),
-
-    CAST(REGEXP_REPLACE(FOREIGN_NON_CARD, r',', '') AS NUMERIC),
-
-    CAST(REGEXP_REPLACE(AMOUNT_CHARGEDBACK_ALREADY, r',', '') AS NUMERIC),
-
-    PARSE_DATE(DATEFORMAT, LTRIM(RTRIM(DATE_CASE_COMPLETE))),
-
-    LTRIM(RTRIM(DAY_CASE_COMPLETED)),
-
-    CAST(REGEXP_REPLACE(AMOUNT_SAVED_CCA_NEGOTIATIONS, r',', '') AS NUMERIC),
-
-    CAST(REGEXP_REPLACE(AMOUNT_SAVED_CBKS, r',', '') AS NUMERIC),
-
-    CAST(REGEXP_REPLACE(AMOUNT_SAVED_PRE_NEG, r',', '') AS NUMERIC),
-
-    CAST(REGEXP_REPLACE(AMOUNT_SAVED_RES_WITH_RETAILER, r',', '') AS NUMERIC),
-
-    CAST(REGEXP_REPLACE(AMOUNT_SAVED_A_COURT, r',', '') AS NUMERIC),
-
-    LTRIM(RTRIM(BUSINESS_ERROR_OVER_1K)),
-
-    LTRIM(RTRIM(BUSINESS_AREA_AT_FAULT)),
-
-    CAST(REGEXP_REPLACE(TOTAL_WRITTEN_OFF, r',', '') AS NUMERIC),
-
-    LTRIM(RTRIM(WRITE_OFF_CATEGORY)),
-
-    LTRIM(RTRIM(FOS_CASE)),
-
-    LTRIM(RTRIM(COURT_CASE)),
-
-    LTRIM(RTRIM(NOTES)),
-
-    LTRIM(RTRIM(FOREIGN_TRANSACTION)),
-
-    LTRIM(RTRIM(MERCHANT_TRADING)),
-
-    PARSE_DATE(DATEFORMAT, LTRIM(RTRIM(DATE_OF_OFFER))),
-
-    CAST(REGEXP_REPLACE(TOTAL_OFFERED_AMOUNT, r',', '') AS NUMERIC),
-
-    LTRIM(RTRIM(REASON_FOR_CLAIM)),
-
-    CAST(REGEXP_REPLACE(CONSEQUENTIAL_LOSS, r',', '') AS NUMERIC),
-
-    LTRIM(RTRIM(SOURCE_OF_CLAIM)),
-
-    LTRIM(RTRIM(CUST_NAME)),
-
-    CAST(REGEXP_REPLACE(AMNT_REC_CHGB, r',', '') AS NUMERIC),
-
-    CAST(REGEXP_REPLACE(AMNT_PAID_CD, r',', '') AS NUMERIC),
-
-    CAST(REGEXP_REPLACE(CONSEQ_LOSS, r',', '') AS NUMERIC),
-
-    LTRIM(RTRIM(CASE_CREATED_BY)),
-
-    LTRIM(RTRIM(CASE_CLOSED_BY)),
-
-    LTRIM(RTRIM(CLOSE_REF)),
-
-    LTRIM(RTRIM(STATUS)),
-
-    PARSE_DATE(DATEFORMAT, LTRIM(RTRIM(FILE_DATE))),
-
-    PRM_LNE_OF_BUS_CDE_FILTER,
-
-    ENTITY_CDE_FILTER,
-
-    CTRY_CDE_FILTER,
-
-    LAST_INGESTION_TIMESTAMP
-
-FROM ${STAGING_DATASET}.CLAIMS_HISTORY
-
-WHERE PRM_LNE_OF_BUS_CDE_FILTER IS NOT NULL
-AND TRIM(PRM_LNE_OF_BUS_CDE_FILTER) <> 'NA'
-AND TRIM(CTRY_CDE_FILTER) <> 'FR';
-
-INSERT INTO ${STAGING_DATASET}.CLAIMS_HISTORY_UNTAGGED
-
-SELECT *
-FROM ${STAGING_DATASET}.CLAIMS_HISTORY
-
-WHERE PRM_LNE_OF_BUS_CDE_FILTER IS NULL;
-
-DELETE FROM ${STAGING_DATASET}.CLAIMS_HISTORY
-
-WHERE PRM_LNE_OF_BUS_CDE_FILTER IS NOT NULL;        )
-
-        print(
-            f"Successfully decoded file to: "
-            f"{decoded_file_path}"
-        )
-
-        return decoded_file_path
-
-    except Exception as e:
-
-        print(
-            f"Failed decoding file "
-            f"{file_path}: {str(e)}"
-        )
-
-        raise
+CLUSTER BY PRM_LNE_OF_BUS_CDE_FILTER, CTRY_CDE_FILTER;

@@ -1,0 +1,203 @@
+def decode_base64_gcs_file(bucket_name, source_gcs_path, decoded_folder):
+
+    global DECODED_FILE_CREATED
+
+    try:
+
+        if 'liveproving' in bucket_name:
+            sa_key = get_sa_key()
+            storage_client = storage.Client.from_service_account_info(sa_key)
+        else:
+            storage_client = storage.Client()
+
+        bucket = storage_client.bucket(bucket_name)
+
+        source_blob = bucket.blob(source_gcs_path)
+
+        if not source_blob.exists():
+            print(f"Source encoded file not found in GCS: {source_gcs_path}")
+            return -1
+
+        print(f"Reading Base64 encoded file from: gs://{bucket_name}/{source_gcs_path}")
+
+        encoded_bytes = source_blob.download_as_bytes()
+
+        encoded_bytes = encoded_bytes.strip()
+
+        try:
+            decoded_bytes = base64.b64decode(encoded_bytes, validate=True)
+            print("Base64 standard decode successful.")
+        except Exception as decode_err:
+            print(f"Standard Base64 decode failed: {decode_err}. Attempting URL-safe Base64...")
+            try:
+                decoded_bytes = base64.b64decode(encoded_bytes, altchars=b'-_')
+                print("URL-safe Base64 decode successful.")
+            except Exception as fallback_err:
+                print(f"URL-safe Base64 decode also failed: {fallback_err}")
+                return -1
+
+        file_name_only = os.path.basename(source_gcs_path)
+
+        decoded_blob_path = f"{decoded_folder}/{file_name_only}"
+
+        print(f"Writing decoded file to: gs://{bucket_name}/{decoded_blob_path}")
+
+        destination_blob = bucket.blob(decoded_blob_path)
+
+        destination_blob.upload_from_string(decoded_bytes, content_type='text/csv')
+
+        DECODED_FILE_CREATED = True
+
+        print(f"Base64 decode completed. Decoded file at: gs://{bucket_name}/{decoded_blob_path}")
+
+        return decoded_blob_path
+
+    except Exception as e:
+        print(f"Unexpected error in decode_base64_gcs_file: {e}")
+        return -1
+
+
+---------------------
+
+next 
+
+
+def step_1b_decode_base64():
+
+    global STEP
+    global GCSFILE
+    global ORIGINAL_ENCODED_FILE_PATH
+    global DECODED_GCS_PATH
+
+    STEP = '1B'
+
+    print("STEP 1B Running... Base64 Decode starting.")
+
+    ORIGINAL_ENCODED_FILE_PATH = f"{TGT_PATH}/{FILE}"
+
+    print(f"Original encoded file path preserved: {ORIGINAL_ENCODED_FILE_PATH}")
+
+    decoded_folder = f"{TGT_PATH}/decoded"
+
+    decoded_blob_path = decode_base64_gcs_file(BUCKET_NAME, ORIGINAL_ENCODED_FILE_PATH, decoded_folder)
+
+    if decoded_blob_path == -1:
+        print("Failed to execute Step 1B (Base64 Decode). Aborting job.")
+        exit("Failed to execute Step 1B (Base64 Decode). Aborting job.")
+
+    GCSFILE = f"gs://{BUCKET_NAME}/{decoded_blob_path}"
+
+    DECODED_GCS_PATH = decoded_blob_path
+
+    print(f"GCSFILE redirected to decoded path: {GCSFILE}")
+
+    print("Successfully executed Step 1B")
+
+
+----------next
+global IS_BASE64_ENCODED
+    global DECODED_GCS_PATH
+    global ORIGINAL_ENCODED_FILE_PATH
+    global DECODED_FILE_CREATED
+
+    config_name = base_dag_file_name.split('.py')[0].split('_TIGER')[0]
+    config_name = f'{config_name}_config.json'
+    config_path = f'{base_dir}/{config_name}'
+
+    if os.path.isfile(config_path):
+        with open(config_path) as cfg_f:
+            feed_config = json.load(cfg_f)
+        IS_BASE64_ENCODED = feed_config.get("is_base64_encoded", False)
+    else:
+        IS_BASE64_ENCODED = False
+
+    print(f"IS_BASE64_ENCODED = {IS_BASE64_ENCODED}")
+
+    ORIGINAL_ENCODED_FILE_PATH = ""
+    DECODED_GCS_PATH = ""
+    DECODED_FILE_CREATED = False
+
+
+
+-------next
+ORIGINAL_ENCODED_FILE_PATH = ""
+                        DECODED_GCS_PATH = ""
+                        DECODED_FILE_CREATED = False
+
+
+-----next
+if EXIT:
+                                if (
+                                    RETRY_COUNT >= TOTAL_RETRIES
+                                    and
+                                    CONTROL_TABLE_UPDATE == False
+                                ):
+                                    sys.exit(2)
+                                else:
+                                    return True
+# <-- INSERT HERE (after the step_1 EXIT guard, before step_2())
+                            step_2()
+
+if IS_BASE64_ENCODED:
+
+                                step_1b_decode_base64()
+
+                                if EXIT:
+                                    if (
+                                        RETRY_COUNT >= TOTAL_RETRIES
+                                        and
+                                        CONTROL_TABLE_UPDATE == False
+                                    ):
+                                        sys.exit(2)
+                                    else:
+                                        return True
+
+----next 
+
+ORIGINAL_ENCODED_FILE_PATH = ""
+                    DECODED_GCS_PATH = ""
+                    DECODED_FILE_CREATED = False
+
+--- next 
+if IS_BASE64_ENCODED:
+
+                            step_1b_decode_base64()
+
+                            if EXIT:
+                                if (
+                                    RETRY_COUNT >= TOTAL_RETRIES
+                                    and
+                                    CONTROL_TABLE_UPDATE == False
+                                ):
+                                    sys.exit(2)
+                                else:
+                                    return True
+
+-----next 
+mv_res = move_gcs_to_archive(
+
+            f'{TGT_PATH}/{FILE}',
+
+            GCSARCHIVEFILE,
+
+            BUCKET_NAME
+        )
+
+
+--
+if IS_BASE64_ENCODED and ORIGINAL_ENCODED_FILE_PATH:
+            source_to_archive = ORIGINAL_ENCODED_FILE_PATH
+        else:
+            source_to_archive = f'{TGT_PATH}/{FILE}'
+
+        mv_res = move_gcs_to_archive(
+
+            source_to_archive,
+
+            GCSARCHIVEFILE,
+
+            BUCKET_NAME
+        )
+
+--
+"is_base64_encoded": true

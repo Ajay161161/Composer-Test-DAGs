@@ -1,182 +1,182 @@
- CREATE TABLE `${STAGING_DATASET}.CLAIMS`
+DECLARE TBL_NAME STRING DEFAULT 'CLAIMS';
+
+DECLARE DATASETNAME STRING DEFAULT '${TARGET_DATASET}';
+
+DECLARE DATEFORMAT STRING DEFAULT '%d-%b-%Y';
+
+INSERT INTO ${STAGING_DATASET}.CLAIMS
+SELECT *
+FROM ${STAGING_DATASET}.CLAIMS_UNTAGGED;
+
+DELETE FROM ${STAGING_DATASET}.CLAIMS_UNTAGGED
+WHERE TRUE;
+
+UPDATE ${STAGING_DATASET}.CLAIMS CL
+
+SET
+
+CL.PRM_LNE_OF_BUS_CDE_FILTER =
+CASE
+    WHEN UPPER(TRIM(CL.ENTITY)) = 'CMB' THEN 'CMB'
+    ELSE 'RBWM'
+END,
+
+CL.ENTITY_CDE_FILTER = 'HBEU',
+
+CL.CTRY_CDE_FILTER = 'UK',
+
+CL.LAST_INGESTION_TIMESTAMP = CURRENT_TIMESTAMP()
+
+WHERE CL.PRM_LNE_OF_BUS_CDE_FILTER IS NULL;
+
+INSERT INTO ${TARGET_DATASET}.CLAIMS
 (
-    INSTANCE_ID STRING OPTIONS(description="Unique identifier for each claim case"),
-
-    DATE_CASE_RECEIVED STRING OPTIONS(description="Date when the claim was received/registered"),
-
-    BRAND STRING OPTIONS(description="Brand or company associated with the claim"),
-
-    CIN STRING OPTIONS(description="Corporate Identification Number (optional)"),
-
-    ENTITY STRING OPTIONS(description="Financial institution or business entity handling the claim"),
-
-    ACCOUNT_NUMBER STRING OPTIONS(description="Customer's account number (optional)"),
-
-    RETAILER STRING OPTIONS(description="Merchant or retailer involved in the transaction"),
-
-    TOTAL_TRANSACTION_VALUE STRING OPTIONS(description="Total value of the disputed transaction"),
-
-    CUSTOMER_NAME STRING OPTIONS(description="Name of the customer filing the claim"),
-
-    CLAIM_STATUS STRING OPTIONS(description="Current status of the claim (e.g., Accepted or Declined)"),
-
-    AMOUNT_CLAIMED STRING OPTIONS(description="Amount customer is claiming (optional)"),
-
-    AMOUNT_SAVED_CHBK STRING OPTIONS(description="Amount saved through chargeback process (optional)"),
-
-    AMOUNT_SAVED_RE_VIA_COURT STRING OPTIONS(description="Amount recovered through court proceedings (optional)"),
-
-    AMOUNT_SAVED_RES_WITH_RETAILER STRING OPTIONS(description="Amount resolved/recovered with retailer (optional)"),
-
-    ARCHIVED STRING OPTIONS(description="Flag indicating if the case is archived"),
-
-    BUSINESS_AREA_AT_FAULT STRING OPTIONS(description="Flag indicating if business area is at fault"),
-
-    CASE_COMPLETE_BY STRING OPTIONS(description="Name of person responsible for completing the case"),
-
-    CATEGORY_NAME STRING OPTIONS(description="Category or classification of the claim (optional)"),
-
-    COMPLETE STRING OPTIONS(description="Flag indicating if the case is complete/closed"),
-
-    CONSEQUENTIAL_LOSS STRING OPTIONS(description="Additional loss claimed beyond transaction value (optional)"),
-
-    COURT_CASE STRING OPTIONS(description="Flag indicating if case went to court"),
-
-    DATE_CASE_COMPLETE STRING OPTIONS(description="Date and time when the case was completed/resolved"),
-
-    DATE_OF_OFFER STRING OPTIONS(description="Date and time when settlement offer was made"),
-
-    FOS_CASE STRING OPTIONS(description="Flag indicating if case involves Financial Ombudsman Service"),
-
-    LEGAL_REFERRAL STRING OPTIONS(description="Flag or reference for legal referral (optional)"),
-
-    NOTES STRING OPTIONS(description="Additional notes or comments about the case (optional)"),
-
-    PRODUCT STRING OPTIONS(description="Payment method/card type used in transaction"),
-
-    REASON_FOR_CLAIM STRING OPTIONS(description="Primary reason why customer filed the claim"),
-
-    REASON_FOR_REJECTION STRING OPTIONS(description="Reason if claim was rejected (optional)"),
-
-    SOURCE_OF_THE_CLAIM STRING OPTIONS(description="Source code indicating where claim originated from"),
-
-    TOTAL_OFFERED_AMOUNT STRING OPTIONS(description="Total amount offered in settlement"),
-
-    TOTAL_WRITTEN_OFF STRING OPTIONS(description="Amount written off/written out of accounts"),
-
-    TRANSACTION_VALUE_ON_CARD STRING OPTIONS(description="Value of disputed transaction recorded on card"),
-
-    WRITE_OFF_CATEGORY STRING OPTIONS(description="Category of write-off (optional)"),
-
-    WRITE_OFF_NUMBER STRING OPTIONS(description="Reference number for write-off transaction (optional)"),
-
-    STATUS_CODE STRING OPTIONS(description="Status of the record (Active, Inactive, etc.)"),
-
-    MODIFIED_ON STRING OPTIONS(description="Timestamp of last modification"),
-
-    MODIFIED_BY STRING OPTIONS(description="User ID or name of person who last modified the record (optional)"),
-
-    GCP_LOAD_DATETIME STRING OPTIONS(description="Timestamp when data was loaded into GCP (Google Cloud Platform)"),
-
-    PRM_LNE_OF_BUS_CDE_FILTER STRING OPTIONS(description="The line of business of the customer - e.g. RBWM, CMB, GPB, GB&M"),
-
-    ENTITY_CDE_FILTER STRING OPTIONS(description="Entity code as defined within ESR based on the value of institution ID"),
-
-    CTRY_CDE_FILTER STRING OPTIONS(description="The country the customer is domiciled in, used for downstream filtering"),
-
-    LAST_INGESTION_TIMESTAMP TIMESTAMP OPTIONS(description="Timestamp when record was last inserted or updated within Big Query itself")
-);
-
-
-CREATE TABLE `${TARGET_DATASET}.CLAIMS`
-(
-    INSTANCE_ID STRING OPTIONS(description="Unique identifier for each claim case"),
-
-    DATE_CASE_RECEIVED DATE OPTIONS(description="Date when the claim was received/registered"),
-
-    BRAND STRING OPTIONS(description="Brand or company associated with the claim"),
-
-    CIN STRING OPTIONS(description="Corporate Identification Number (optional)"),
-
-    ENTITY STRING OPTIONS(description="Financial institution or business entity handling the claim"),
-
-    ACCOUNT_NUMBER STRING OPTIONS(description="Customer's account number (optional)"),
-
-    RETAILER STRING OPTIONS(description="Merchant or retailer involved in the transaction"),
-
-    TOTAL_TRANSACTION_VALUE NUMERIC OPTIONS(description="Total value of the disputed transaction"),
-
-    CUSTOMER_NAME STRING OPTIONS(description="Name of the customer filing the claim"),
-
-    CLAIM_STATUS STRING OPTIONS(description="Current status of the claim (e.g., Accepted or Declined)"),
-
-    AMOUNT_CLAIMED NUMERIC OPTIONS(description="Amount customer is claiming (optional)"),
-
-    AMOUNT_SAVED_CHBK NUMERIC OPTIONS(description="Amount saved through chargeback process (optional)"),
-
-    AMOUNT_SAVED_RE_VIA_COURT NUMERIC OPTIONS(description="Amount recovered through court proceedings (optional)"),
-
-    AMOUNT_SAVED_RES_WITH_RETAILER NUMERIC OPTIONS(description="Amount resolved/recovered with retailer (optional)"),
-
-    ARCHIVED NUMERIC OPTIONS(description="Flag indicating if the case is archived"),
-
-    BUSINESS_AREA_AT_FAULT NUMERIC OPTIONS(description="Flag indicating if business area is at fault"),
-
-    CASE_COMPLETE_BY STRING OPTIONS(description="Name of person responsible for completing the case"),
-
-    CATEGORY_NAME STRING OPTIONS(description="Category or classification of the claim (optional)"),
-
-    COMPLETE NUMERIC OPTIONS(description="Flag indicating if the case is complete/closed"),
-
-    CONSEQUENTIAL_LOSS NUMERIC OPTIONS(description="Additional loss claimed beyond transaction value (optional)"),
-
-    COURT_CASE NUMERIC OPTIONS(description="Flag indicating if case went to court"),
-
-    DATE_CASE_COMPLETE DATE OPTIONS(description="Date and time when the case was completed/resolved"),
-
-    DATE_OF_OFFER DATE OPTIONS(description="Date and time when settlement offer was made"),
-
-    FOS_CASE NUMERIC OPTIONS(description="Flag indicating if case involves Financial Ombudsman Service"),
-
-    LEGAL_REFERRAL NUMERIC OPTIONS(description="Flag or reference for legal referral (optional)"),
-
-    NOTES STRING OPTIONS(description="Additional notes or comments about the case (optional)"),
-
-    PRODUCT STRING OPTIONS(description="Payment method/card type used in transaction"),
-
-    REASON_FOR_CLAIM STRING OPTIONS(description="Primary reason why customer filed the claim"),
-
-    REASON_FOR_REJECTION STRING OPTIONS(description="Reason if claim was rejected (optional)"),
-
-    SOURCE_OF_THE_CLAIM NUMERIC OPTIONS(description="Source code indicating where claim originated from"),
-
-    TOTAL_OFFERED_AMOUNT NUMERIC OPTIONS(description="Total amount offered in settlement"),
-
-    TOTAL_WRITTEN_OFF NUMERIC OPTIONS(description="Amount written off/written out of accounts"),
-
-    TRANSACTION_VALUE_ON_CARD NUMERIC OPTIONS(description="Value of disputed transaction recorded on card"),
-
-    WRITE_OFF_CATEGORY STRING OPTIONS(description="Category of write-off (optional)"),
-
-    WRITE_OFF_NUMBER STRING OPTIONS(description="Reference number for write-off transaction (optional)"),
-
-    STATUS_CODE STRING OPTIONS(description="Status of the record (Active, Inactive, etc.)"),
-
-    MODIFIED_ON DATE OPTIONS(description="Timestamp of last modification"),
-
-    MODIFIED_BY STRING OPTIONS(description="User ID or name of person who last modified the record (optional)"),
-
-    GCP_LOAD_DATETIME DATE OPTIONS(description="Timestamp when data was loaded into GCP (Google Cloud Platform)"),
-
-    PRM_LNE_OF_BUS_CDE_FILTER STRING OPTIONS(description="The line of business of the customer - e.g. RBWM, CMB, GPB, GB&M"),
-
-    ENTITY_CDE_FILTER STRING OPTIONS(description="Entity code as defined within ESR based on the value of institution ID"),
-
-    CTRY_CDE_FILTER STRING OPTIONS(description="The country the customer is domiciled in, used for downstream filtering"),
-
-    LAST_INGESTION_TIMESTAMP TIMESTAMP OPTIONS(description="Timestamp when record was last inserted or updated within Big Query itself")
+    INSTANCE_ID,
+    DATE_CASE_RECEIVED,
+    BRAND,
+    CIN,
+    ENTITY,
+    ACCOUNT_NUMBER,
+    RETAILER,
+    TOTAL_TRANSACTION_VALUE,
+    CUSTOMER_NAME,
+    CLAIM_STATUS,
+    AMOUNT_CLAIMED,
+    AMOUNT_SAVED_CHBK,
+    AMOUNT_SAVED_RE_VIA_COURT,
+    AMOUNT_SAVED_RES_WITH_RETAILER,
+    ARCHIVED,
+    BUSINESS_AREA_AT_FAULT,
+    CASE_COMPLETE_BY,
+    CATEGORY_NAME,
+    COMPLETE,
+    CONSEQUENTIAL_LOSS,
+    COURT_CASE,
+    DATE_CASE_COMPLETE,
+    DATE_OF_OFFER,
+    FOS_CASE,
+    LEGAL_REFERRAL,
+    NOTES,
+    PRODUCT,
+    REASON_FOR_CLAIM,
+    REASON_FOR_REJECTION,
+    SOURCE_OF_THE_CLAIM,
+    TOTAL_OFFERED_AMOUNT,
+    TOTAL_WRITTEN_OFF,
+    TRANSACTION_VALUE_ON_CARD,
+    WRITE_OFF_CATEGORY,
+    WRITE_OFF_NUMBER,
+    STATUS_CODE,
+    MODIFIED_ON,
+    MODIFIED_BY,
+    GCP_LOAD_DATETIME,
+    PRM_LNE_OF_BUS_CDE_FILTER,
+    ENTITY_CDE_FILTER,
+    CTRY_CDE_FILTER,
+    LAST_INGESTION_TIMESTAMP
 )
 
-PARTITION BY DATE(LAST_INGESTION_TIMESTAMP)
+SELECT
 
-CLUSTER BY PRM_LNE_OF_BUS_CDE_FILTER, CTRY_CDE_FILTER;
+    LTRIM(RTRIM(INSTANCE_ID)),
+
+    PARSE_DATE(DATEFORMAT, LTRIM(RTRIM(DATE_CASE_RECEIVED))),
+
+    LTRIM(RTRIM(BRAND)),
+
+    LTRIM(RTRIM(CIN)),
+
+    LTRIM(RTRIM(ENTITY)),
+
+    LTRIM(RTRIM(ACCOUNT_NUMBER)),
+
+    LTRIM(RTRIM(RETAILER)),
+
+    CAST(REGEXP_REPLACE(TOTAL_TRANSACTION_VALUE, r',', '') AS NUMERIC),
+
+    LTRIM(RTRIM(CUSTOMER_NAME)),
+
+    LTRIM(RTRIM(CLAIM_STATUS)),
+
+    CAST(REGEXP_REPLACE(AMOUNT_CLAIMED, r',', '') AS NUMERIC),
+
+    CAST(REGEXP_REPLACE(AMOUNT_SAVED_CHBK, r',', '') AS NUMERIC),
+
+    CAST(REGEXP_REPLACE(AMOUNT_SAVED_RE_VIA_COURT, r',', '') AS NUMERIC),
+
+    CAST(REGEXP_REPLACE(AMOUNT_SAVED_RES_WITH_RETAILER, r',', '') AS NUMERIC),
+
+    CAST(REGEXP_REPLACE(ARCHIVED, r',', '') AS NUMERIC),
+
+    CAST(REGEXP_REPLACE(BUSINESS_AREA_AT_FAULT, r',', '') AS NUMERIC),
+
+    LTRIM(RTRIM(CASE_COMPLETE_BY)),
+
+    LTRIM(RTRIM(CATEGORY_NAME)),
+
+    CAST(REGEXP_REPLACE(COMPLETE, r',', '') AS NUMERIC),
+
+    CAST(REGEXP_REPLACE(CONSEQUENTIAL_LOSS, r',', '') AS NUMERIC),
+
+    CAST(REGEXP_REPLACE(COURT_CASE, r',', '') AS NUMERIC),
+
+    PARSE_DATE(DATEFORMAT, LTRIM(RTRIM(DATE_CASE_COMPLETE))),
+
+    PARSE_DATE(DATEFORMAT, LTRIM(RTRIM(DATE_OF_OFFER))),
+
+    CAST(REGEXP_REPLACE(FOS_CASE, r',', '') AS NUMERIC),
+
+    CAST(REGEXP_REPLACE(LEGAL_REFERRAL, r',', '') AS NUMERIC),
+
+    LTRIM(RTRIM(NOTES)),
+
+    LTRIM(RTRIM(PRODUCT)),
+
+    LTRIM(RTRIM(REASON_FOR_CLAIM)),
+
+    LTRIM(RTRIM(REASON_FOR_REJECTION)),
+
+    CAST(REGEXP_REPLACE(SOURCE_OF_THE_CLAIM, r',', '') AS NUMERIC),
+
+    CAST(REGEXP_REPLACE(TOTAL_OFFERED_AMOUNT, r',', '') AS NUMERIC),
+
+    CAST(REGEXP_REPLACE(TOTAL_WRITTEN_OFF, r',', '') AS NUMERIC),
+
+    CAST(REGEXP_REPLACE(TRANSACTION_VALUE_ON_CARD, r',', '') AS NUMERIC),
+
+    LTRIM(RTRIM(WRITE_OFF_CATEGORY)),
+
+    LTRIM(RTRIM(WRITE_OFF_NUMBER)),
+
+    LTRIM(RTRIM(STATUS_CODE)),
+
+    PARSE_DATE(DATEFORMAT, LTRIM(RTRIM(MODIFIED_ON))),
+
+    LTRIM(RTRIM(MODIFIED_BY)),
+
+    PARSE_DATE(DATEFORMAT, LTRIM(RTRIM(GCP_LOAD_DATETIME))),
+
+    PRM_LNE_OF_BUS_CDE_FILTER,
+
+    ENTITY_CDE_FILTER,
+
+    CTRY_CDE_FILTER,
+
+    LAST_INGESTION_TIMESTAMP
+
+FROM ${STAGING_DATASET}.CLAIMS
+
+WHERE PRM_LNE_OF_BUS_CDE_FILTER IS NOT NULL
+AND TRIM(PRM_LNE_OF_BUS_CDE_FILTER) <> 'NA'
+AND TRIM(CTRY_CDE_FILTER) <> 'FR';
+
+INSERT INTO ${STAGING_DATASET}.CLAIMS_UNTAGGED
+
+SELECT *
+FROM ${STAGING_DATASET}.CLAIMS
+
+WHERE PRM_LNE_OF_BUS_CDE_FILTER IS NULL;
+
+DELETE FROM ${STAGING_DATASET}.CLAIMS
+
+WHERE PRM_LNE_OF_BUS_CDE_FILTER IS NOT NULL;

@@ -1,0 +1,18 @@
+parent_path = "/".join(TGT_PATH.rstrip("/").split("/")[:-1])
+GCSARCHIVEFILE = (
+    f'{parent_path}/archive/'
+    f'{ODATECH}/{FILE}'
+)
+
+parent_path = "/".join(TGT_PATH.rstrip("/").split("/")[:-1])
+GCSARCHIVEFILE = (
+    f'{parent_path}/archive/'
+    f'{ODATECH}/{FILE}'
+)
+
+# FIND this line in step_1b_decode_base64:
+decoded_folder = f"{TGT_PATH}/decoded"
+
+# REPLACE with:
+parent_path = "/".join(TGT_PATH.rstrip("/").split("/")[:-1])
+decoded_folder = f"{parent_path}/decoded"

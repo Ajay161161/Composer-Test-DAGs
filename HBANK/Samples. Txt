@@ -1,110 +1,47 @@
-DECLARE TBL_NAME STRING DEFAULT 'CLAIMS';
-DECLARE DATASETNAME STRING DEFAULT '${TARGET_DATASET}';
-DECLARE DATEFORMAT STRING DEFAULT '%Y-%m-%d';
+if IS_BASE64_ENCODED and ORIGINAL_ENCODED_FILE_PATH:
+            source_to_archive = ORIGINAL_ENCODED_FILE_PATH
+        else:
+            source_to_archive = f'{TGT_PATH}/{FILE}'
 
-UPDATE ${STAGING_DATASET}.CLAIMS CL
-SET
-    CL.PRM_LNE_OF_BUS_CDE_FILTER =
-        CASE
-            WHEN UPPER(TRIM(CL.ENTITY)) = 'CMB' THEN 'CMB'
-            ELSE 'RBWM'
-        END,
-    CL.ENTITY_CDE_FILTER = 'HBEU',
-    CL.CTRY_CDE_FILTER = 'UK',
-    CL.LAST_INGESTION_TIMESTAMP = CURRENT_TIMESTAMP()
-WHERE CL.PRM_LNE_OF_BUS_CDE_FILTER IS NULL;
+        # Archive original encoded file to raw/archive
+        parent_path = "/".join(TGT_PATH.rstrip("/").split("/")[:-1])
+        raw_archive = f'{TGT_PATH}/archive/{ODATECH}/{FILE}'
 
-INSERT INTO ${TARGET_DATASET}.CLAIMS
-(
-    INSTANCE_ID,
-    DATE_CASE_RECEIVED,
-    BRAND,
-    CIN,
-    ENTITY,
-    ACCOUNT_NUMBER,
-    RETAILER,
-    TOTAL_TRANSACTION_VALUE,
-    CUSTOMER_NAME,
-    CLAIM_STATUS,
-    AMOUNT_CLAIMED,
-    AMOUNT_SAVED_CHBK,
-    AMOUNT_SAVED_RE_VIA_COURT,
-    AMOUNT_SAVED_RES_WITH_RETAILER,
-    ARCHIVED,
-    BUSINESS_AREA_AT_FAULT,
-    CASE_COMPLETE_BY,
-    CATEGORY_NAME,
-    COMPLETE,
-    CONSEQUENTIAL_LOSS,
-    COURT_CASE,
-    DATE_CASE_COMPLETE,
-    DATE_OF_OFFER,
-    FOS_CASE,
-    LEGAL_REFERRAL,
-    NOTES,
-    PRODUCT,
-    REASON_FOR_CLAIM,
-    REASON_FOR_REJECTION,
-    SOURCE_OF_THE_CLAIM,
-    TOTAL_OFFERED_AMOUNT,
-    TOTAL_WRITTEN_OFF,
-    TRANSACTION_VALUE_ON_CARD,
-    WRITE_OFF_CATEGORY,
-    WRITE_OFF_NUMBER,
-    STATUS_CODE,
-    MODIFIED_ON,
-    MODIFIED_BY,
-    GCP_LOAD_DATETIME,
-    PRM_LNE_OF_BUS_CDE_FILTER,
-    ENTITY_CDE_FILTER,
-    CTRY_CDE_FILTER,
-    LAST_INGESTION_TIMESTAMP
-)
+        mv_res = move_gcs_to_archive(
+            source_to_archive,
+            raw_archive,
+            BUCKET_NAME
+        )
 
-SELECT
-    NULLIF(LTRIM(RTRIM(INSTANCE_ID)), ''),
-    SAFE.PARSE_DATE(DATEFORMAT, NULLIF(LTRIM(RTRIM(DATE_CASE_RECEIVED)), '')),
-    NULLIF(LTRIM(RTRIM(BRAND)), ''),
-    NULLIF(LTRIM(RTRIM(CIN)), ''),
-    NULLIF(LTRIM(RTRIM(ENTITY)), ''),
-    NULLIF(LTRIM(RTRIM(ACCOUNT_NUMBER)), ''),
-    NULLIF(LTRIM(RTRIM(RETAILER)), ''),
-    SAFE_CAST(NULLIF(REGEXP_REPLACE(LTRIM(RTRIM(TOTAL_TRANSACTION_VALUE)), r'[^0-9.]', ''), '') AS NUMERIC),
-    NULLIF(LTRIM(RTRIM(CUSTOMER_NAME)), ''),
-    NULLIF(LTRIM(RTRIM(CLAIM_STATUS)), ''),
-    SAFE_CAST(NULLIF(REGEXP_REPLACE(LTRIM(RTRIM(AMOUNT_CLAIMED)), r'[^0-9.]', ''), '') AS NUMERIC),
-    SAFE_CAST(NULLIF(REGEXP_REPLACE(LTRIM(RTRIM(AMOUNT_SAVED_CHBK)), r'[^0-9.]', ''), '') AS NUMERIC),
-    SAFE_CAST(NULLIF(REGEXP_REPLACE(LTRIM(RTRIM(AMOUNT_SAVED_RE_VIA_COURT)), r'[^0-9.]', ''), '') AS NUMERIC),
-    SAFE_CAST(NULLIF(REGEXP_REPLACE(LTRIM(RTRIM(AMOUNT_SAVED_RES_WITH_RETAILER)), r'[^0-9.]', ''), '') AS NUMERIC),
-    SAFE_CAST(NULLIF(LTRIM(RTRIM(ARCHIVED)), '') AS BOOL),
-    SAFE_CAST(NULLIF(LTRIM(RTRIM(BUSINESS_AREA_AT_FAULT)), '') AS BOOL),
-    NULLIF(LTRIM(RTRIM(CASE_COMPLETE_BY)), ''),
-    NULLIF(LTRIM(RTRIM(CATEGORY_NAME)), ''),
-    SAFE_CAST(NULLIF(LTRIM(RTRIM(COMPLETE)), '') AS BOOL),
-    SAFE_CAST(NULLIF(REGEXP_REPLACE(LTRIM(RTRIM(CONSEQUENTIAL_LOSS)), r'[^0-9.]', ''), '') AS NUMERIC),
-    SAFE_CAST(NULLIF(LTRIM(RTRIM(COURT_CASE)), '') AS BOOL),
-    CAST(SAFE.PARSE_TIMESTAMP('%Y-%m-%dT%H:%M:%SZ', NULLIF(LTRIM(RTRIM(DATE_CASE_COMPLETE)), '')) AS DATETIME),
-    CAST(SAFE.PARSE_TIMESTAMP('%Y-%m-%dT%H:%M:%SZ', NULLIF(LTRIM(RTRIM(DATE_OF_OFFER)), '')) AS DATETIME),
-    SAFE_CAST(NULLIF(LTRIM(RTRIM(FOS_CASE)), '') AS BOOL),
-    SAFE_CAST(NULLIF(LTRIM(RTRIM(LEGAL_REFERRAL)), '') AS BOOL),
-    NULLIF(LTRIM(RTRIM(NOTES)), ''),
-    NULLIF(LTRIM(RTRIM(PRODUCT)), ''),
-    NULLIF(LTRIM(RTRIM(REASON_FOR_CLAIM)), ''),
-    NULLIF(LTRIM(RTRIM(REASON_FOR_REJECTION)), ''),
-    SAFE_CAST(NULLIF(REGEXP_REPLACE(LTRIM(RTRIM(SOURCE_OF_THE_CLAIM)), r'[^0-9.]', ''), '') AS NUMERIC),
-    SAFE_CAST(NULLIF(REGEXP_REPLACE(LTRIM(RTRIM(TOTAL_OFFERED_AMOUNT)), r'[^0-9.]', ''), '') AS NUMERIC),
-    SAFE_CAST(NULLIF(REGEXP_REPLACE(LTRIM(RTRIM(TOTAL_WRITTEN_OFF)), r'[^0-9.]', ''), '') AS NUMERIC),
-    SAFE_CAST(NULLIF(REGEXP_REPLACE(LTRIM(RTRIM(TRANSACTION_VALUE_ON_CARD)), r'[^0-9.]', ''), '') AS NUMERIC),
-    NULLIF(LTRIM(RTRIM(WRITE_OFF_CATEGORY)), ''),
-    NULLIF(LTRIM(RTRIM(WRITE_OFF_NUMBER)), ''),
-    NULLIF(LTRIM(RTRIM(STATUS_CODE)), ''),
-    CAST(SAFE.PARSE_TIMESTAMP('%Y-%m-%dT%H:%M:%SZ', NULLIF(LTRIM(RTRIM(MODIFIED_ON)), '')) AS DATETIME),
-    NULLIF(LTRIM(RTRIM(MODIFIED_BY)), ''),
-    CAST(SAFE.PARSE_TIMESTAMP('%Y-%m-%dT%H:%M:%SZ', NULLIF(LTRIM(RTRIM(GCP_LOAD_DATETIME)), '')) AS DATETIME),
-    PRM_LNE_OF_BUS_CDE_FILTER,
-    ENTITY_CDE_FILTER,
-    CTRY_CDE_FILTER,
-    LAST_INGESTION_TIMESTAMP
+        if mv_res == -1:
+            print(f"Failed to archive raw file in Step {STEP}.. Aborting job.")
+            exit(f"Failed to archive raw file in Step {STEP}.. Aborting job.")
+        else:
+            print("Raw file archived successfully.")
 
-FROM ${STAGING_DATASET}.CLAIMS
-WHERE PRM_LNE_OF_BUS_CDE_FILTER IS NOT NULL;
+        # Archive decoded file to decoded/archive
+        if IS_BASE64_ENCODED and DECODED_GCS_PATH:
+
+            decoded_archive = (
+                f'{parent_path}/decoded/archive/'
+                f'{ODATECH}/{FILE}'
+            )
+
+            mv_decoded = move_gcs_to_archive(
+                DECODED_GCS_PATH,
+                decoded_archive,
+                BUCKET_NAME
+            )
+
+            if mv_decoded == -1:
+                print(f"Failed to archive decoded file in Step {STEP}.. Aborting job.")
+                exit(f"Failed to archive decoded file in Step {STEP}.. Aborting job.")
+            else:
+                print("Decoded file archived successfully.")
+
+        FILES_ARCHIVED = True
+        print("Successfully executed Step 9..")
+
+
+GCSARCHIVEFILE = f'{TGT_PATH}/archive/{ODATECH}/{FILE}'
+
